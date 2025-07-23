@@ -10,14 +10,14 @@ const register = asyncHandler(async (req, res) => {
     }
     const existedUser = await User.findOne({ email })
     if (existedUser) {
-        return res.status(409).json("User with email or username already exists")
+        return res.status(409).json("User with email already exists")
     }
     const newUser = await User.create({ name, email, password })
     const createdUser = await User.findById(newUser._id)
     if (!createdUser) {
         return res.status(500).json({ message: "User creation failed" })
     }
-    res.status(201).json({ message: "User registered successfully" })
+    res.status(201).json({ createdUser, message: "User registered successfully" })
 
 });
 
@@ -38,35 +38,25 @@ const login = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Invalid User credentials")
     }
 
-    const refreshToken = user.generateRefreshToken()
-    user.refreshToken = refreshToken
-    await user.save({ validateBeforeSave: false }) // validateBeforeSave: false means password validation is not required
+    const accessToken = user.generateAccessToken()
+    // user.refreshToken = accessToken
+    // await user.save({ validateBeforeSave: false }) // validateBeforeSave: false means password validation is not required
 
     res.status(200)
-        .cookie("refreshToken", refreshToken)
-        .json({ userId: user._id })
+        .cookie("accessToken", accessToken)
+        .json(user, "User logged in successfully")
 
 });
 
 const logout = asyncHandler(async (req, res) => {
-    const user = await User.findByIdAndUpdate(
-        req.user._id,
-        {
-            $unset: {
-                refreshToken: 1
-            }
-        },
-        {
-            new: true
-        }
-    )
+    const user = await User.findById(req.user._id)
     // new: true means return the updated user document
     if (!user) {
         return res.status(404).json({ message: "User not found" })
     }
 
     res.status(200)
-        .clearCookie("refreshToken", options)
+        .clearCookie("accessToken")
         .json({ message: "User logged out successfully" })
 })
 

@@ -4,7 +4,10 @@ import User  from '../models/user.model.js'
 
 const verifyJWT = asyncHandler(async (req, res, next) => {
     try {
+        console.log(req.cookies);
+        console.log(req.header("Authorization"));
         const token = req.cookies?.accessToken || req.header("Authorization")?.split(" ")[1];
+        console.log("Token:", token);
         if (!token) {
             return res.status(401).json("Access token is missing");
         }
