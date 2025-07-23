@@ -1,5 +1,4 @@
 import BankAccount from "../models/bankAccount.model.js";
-import User from "../models/user.model.js";
 import asyncHandler from "../asyncHandler.js";
 
 const addBankAccount = asyncHandler(async (req, res) => {

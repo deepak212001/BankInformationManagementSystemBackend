@@ -17,7 +17,19 @@ const register = asyncHandler(async (req, res) => {
     if (!createdUser) {
         return res.status(500).json({ message: "User creation failed" })
     }
-    res.status(201).json({ createdUser, message: "User registered successfully" })
+    const accessToken = newUser.generateAccessToken()
+    // user.refreshToken = accessToken
+    // await user.save({ validateBeforeSave: false }) // validateBeforeSave: false means password validation is not required
+    if (!accessToken) {
+        return res.status(500).json({ message: "Failed to generate access token" })
+    }
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    res.status(201)
+        .cookie("accessToken", accessToken, options)
+        .json({ createdUser, message: "User registered successfully" })
 
 });
 
@@ -41,9 +53,15 @@ const login = asyncHandler(async (req, res) => {
     const accessToken = user.generateAccessToken()
     // user.refreshToken = accessToken
     // await user.save({ validateBeforeSave: false }) // validateBeforeSave: false means password validation is not required
-
+    if (!accessToken) {
+        return res.status(500).json({ message: "Failed to generate access token" })
+    }
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
     res.status(200)
-        .cookie("accessToken", accessToken)
+        .cookie("accessToken", accessToken, options)
         .json(user, "User logged in successfully")
 
 });
@@ -55,9 +73,31 @@ const logout = asyncHandler(async (req, res) => {
         return res.status(404).json({ message: "User not found" })
     }
 
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
     res.status(200)
-        .clearCookie("accessToken")
+        .clearCookie("accessToken", options)
         .json({ message: "User logged out successfully" })
 })
 
-export { register, login, logout }
+const loginaccess = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).select("-password -__v -createdAt -updatedAt")
+    if (!user) {
+        return res.status(404).json({ message: "User not found" })
+    }
+    res.status(200).json(user)
+})
+
+const getAllUsers = asyncHandler(async (req, res) => {
+    const users = await User.find()
+    console.log(users)
+    if (!users) {
+        return res.status(404).json({ message: "User not found" })
+    }
+    res.status(200).json(users);
+})
+
+export { register, login, logout, loginaccess, getAllUsers }
