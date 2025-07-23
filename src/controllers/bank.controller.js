@@ -1,21 +1,26 @@
 import BankAccount from "../models/bankAccount.model.js";
+import User from "../models/user.model.js";
 import asyncHandler from "../asyncHandler.js";
 
 const addBankAccount = asyncHandler(async (req, res) => {
-    const { accountNumber, bankName, accountHolderName } = req.body;
+    const { accountNumber, bankName, accountHolderName, branchName, ifscCode } = req.body;
 
-    if (!accountNumber || !bankName || !accountHolderName) {
+    if (!accountNumber || !bankName || !accountHolderName || !branchName || !ifscCode) {
         return res.status(400).json({ message: "All fields are required" });
     }
 
-    const newBankAccount = new BankAccount({
+    const newBankAccount = await BankAccount.create({
         accountNumber,
         bankName,
         accountHolderName,
+        branchName,
+        ifscCode,
         userId: req.user._id, // Assuming user ID is available in req.user
     });
 
-    await newBankAccount.save();
+    if (!newBankAccount) {
+        return res.status(500).json({ message: "Failed to create bank account" });
+    }
 
     res.status(201).json({
         message: "Bank account added successfully",
@@ -38,9 +43,21 @@ const getBankAccounts = asyncHandler(async (req, res) => {
 
 const updateBankAccount = asyncHandler(async (req, res) => {
     const { accountId } = req.params;
-    const { accountNumber, bankName, accountHolderName } = req.body;
+    const { accountNumber, bankName, accountHolderName, branchName, ifscCode } = req.body;
 
-    const bankAccount = await BankAccount.findById(accountId);
+    const bankAccount = await BankAccount.findByIdAndUpdate(
+        accountId,
+        {
+            $set: {
+                accountNumber: accountNumber,
+                bankName: bankName,
+                accountHolderName: accountHolderName,
+                branchName: branchName,
+                ifscCode: ifscCode,
+            }
+        },
+        { new: true }
+    );
 
     if (!bankAccount || bankAccount.userId.toString() !== req.user._id.toString()) {
         return res.status(404).json({ message: "Bank account not found" });
@@ -49,6 +66,8 @@ const updateBankAccount = asyncHandler(async (req, res) => {
     if (accountNumber) bankAccount.accountNumber = accountNumber;
     if (bankName) bankAccount.bankName = bankName;
     if (accountHolderName) bankAccount.accountHolderName = accountHolderName;
+    if (branchName) bankAccount.branchName = branchName;
+    if (ifscCode) bankAccount.ifscCode = ifscCode;
 
     await bankAccount.save();
 
@@ -61,6 +80,9 @@ const updateBankAccount = asyncHandler(async (req, res) => {
 const deleteBankAccount = asyncHandler(async (req, res) => {
     const { accountId } = req.params;
     const bankAccount = await BankAccount.findById(accountId);
+    if (!bankAccount || bankAccount.userId.toString() !== req.user._id.toString()) {
+        return res.status(404).json({ message: "Bank account not found" });
+    }
     const deleteRespone = await BankAccount.findByIdAndDelete(bankAccount._id);
     if (!deleteRespone) {
         return res.status(404).json({ message: "Bank account not found" });
@@ -73,8 +95,11 @@ const deleteBankAccount = asyncHandler(async (req, res) => {
 });
 
 const getAllUsersBank = async (req, res) => {
-    const data = await BankAccount.find().populate("user", "username email");
-    res.json(data);
+    const data = await BankAccount.find().populate("userId", "name email -_id");
+    if (!data || data.length === 0) {
+        return res.status(404).json({ message: "No bank accounts found" });
+    }
+    res.status(200).json(data, "Bank accounts retrieved successfully");
 };
 
 export { addBankAccount, getBankAccounts, updateBankAccount, deleteBankAccount, getAllUsersBank };

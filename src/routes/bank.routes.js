@@ -7,7 +7,7 @@ const route = Router();
 route.use(verifyJWT);
 route.post("/add", addBankAccount);
 route.get("/", getBankAccounts);
-route.put("/:accountId", updateBankAccount);
+route.patch("/:accountId", updateBankAccount);
 route.delete("/:accountId", deleteBankAccount);
 route.get("/all", getAllUsersBank);
 
