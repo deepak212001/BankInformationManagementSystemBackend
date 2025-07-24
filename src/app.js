@@ -3,6 +3,7 @@ import cors from "cors"
 import cookiesParser from "cookie-parser"
 
 const app = express()
+app.use(cookiesParser())
 
 app.use(cors({
     origin: ["http://localhost:5173", "https://bank-information-management-system-opal.vercel.app"],
@@ -15,7 +16,7 @@ app.use(express.json({ limit: '16kb' }))
 
 app.use(express.urlencoded({ extended: true, limit: "16kb" }))
 
-app.use(cookiesParser())
+
 
 app.get('/', (req, res) => {
     res.send("Welcome to the API")
