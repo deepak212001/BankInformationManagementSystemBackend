@@ -10,14 +10,14 @@ const register = asyncHandler(async (req, res) => {
     }
     const existedUser = await User.findOne({ email })
     if (existedUser) {
-        return res.status(409).json("User with email already exists")
+        return res.status(409).json({ message: "User with email already exists" })
     }
     const newUser = await User.create({ name, email, password })
     const createdUser = await User.findById(newUser._id)
     if (!createdUser) {
         return res.status(500).json({ message: "User creation failed" })
     }
-    const accessToken = newUser.generateAccessToken()
+    const accessToken = createdUser.generateAccessToken()
     // user.refreshToken = accessToken
     // await user.save({ validateBeforeSave: false }) // validateBeforeSave: false means password validation is not required
     if (!accessToken) {
@@ -29,7 +29,7 @@ const register = asyncHandler(async (req, res) => {
     }
     res.status(201)
         .cookie("accessToken", accessToken, options)
-        .json({ createdUser, message: "User registered successfully" })
+        .json(createdUser, "User registered successfully")
 
 });
 
@@ -42,12 +42,12 @@ const login = asyncHandler(async (req, res) => {
 
     const user = await User.findOne({ email })
     if (!user) {
-        return res.status(401).json({ message: "Invalid credentials" })
+        return res.status(401).json({ message: "User not found by thi email !! Please register" })
     }
     const isPasswordValid = await user.isPasswordCorrect(password)
 
     if (!isPasswordValid) {
-        throw new ApiError(401, "Invalid User credentials")
+        return res.status(401).json({ message: "Incorrect Password" })
     }
 
     const accessToken = user.generateAccessToken()
@@ -85,9 +85,11 @@ const logout = asyncHandler(async (req, res) => {
 
 const loginaccess = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user._id).select("-password -__v -createdAt -updatedAt")
+    console.log("user", user);
     if (!user) {
         return res.status(404).json({ message: "User not found" })
     }
+    console.log("cur user", user)
     res.status(200).json(user)
 })
 

@@ -98,7 +98,7 @@ const getAllUsersBank = async (req, res) => {
     if (!data || data.length === 0) {
         return res.status(404).json({ message: "No bank accounts found" });
     }
-    res.status(200).json(data, "Bank accounts retrieved successfully");
+    res.status(200).json({ data, message: "Bank accounts retrieved successfully" });
 };
 
 export { addBankAccount, getBankAccounts, updateBankAccount, deleteBankAccount, getAllUsersBank };
